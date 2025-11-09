@@ -6,8 +6,10 @@
 
 | Item | Specification | Quantity | Notes | Est. Price |
 |------|--------------|----------|-------|------------|
-| Arduino Uno | R3 or compatible | 1 | Mega/Leonardo also work | $20-25 |
+| Arduino Board | Uno R3 or Mega 2560 | 1 | Mega recommended for more memory | $20-30 |
 | TFT LCD Display | 3.2" SPI 240x320 v1.0 with SD slot | 1 | Must have SD card slot | $15-20 |
+| RTC Module | DS3231 or DS1307 I2C | 1 | DS3231 more accurate (recommended) | $3-8 |
+| CR2032 Battery | 3V coin cell | 1 | For RTC backup power | $1-3 |
 | Hall Effect Sensor | A3144, A3141, SS49E, or similar | 1 | Digital output type | $1-3 |
 | Neodymium Magnets | 5-10mm diameter | 12 | Strong enough to trigger sensor | $5-10 |
 | Push Buttons | Momentary tactile switch | 2 | 6mm tactile switches work well | $1-2 |
@@ -32,8 +34,8 @@
 | Heat Shrink Tubing | Protect connections | $3-5 |
 
 ## Total Estimated Cost
-**Minimum**: ~$55-70 (with existing Arduino and tools)
-**Complete Kit**: ~$75-100 (everything new)
+**Minimum**: ~$60-80 (with existing Arduino and tools)
+**Complete Kit**: ~$80-110 (everything new including RTC)
 
 ## Where to Buy
 
@@ -76,6 +78,30 @@
 - Has SPI (not 8-bit parallel)
 - Has SD card slot on back
 - Includes SD card libraries/examples
+
+### RTC Module
+**Recommended Type**: DS3231 (more accurate than DS1307)
+
+**Critical Features:**
+- I2C interface
+- Built-in CR2032 battery holder
+- 5V tolerant (or has built-in voltage regulator)
+- Temperature-compensated crystal (DS3231 only)
+
+**DS3231 vs DS1307:**
+- **DS3231**: ±2 ppm accuracy (~1 minute per year drift), temperature compensated, recommended
+- **DS1307**: ±2 seconds per day accuracy (~12 minutes per year drift), cheaper
+- Both work with same code (same library)
+
+**Common Sellers**: Look for "DS3231 RTC Module" or "DS1307 RTC Module I2C"
+
+**What's Included:**
+- RTC chip on breakout board
+- I2C pull-up resistors (usually 4.7kΩ)
+- CR2032 battery holder
+- May include charging circuit (not needed for this project)
+
+**IMPORTANT**: Insert CR2032 battery BEFORE first use!
 
 ### Hall Effect Sensor
 **Recommended Types:**
@@ -177,15 +203,17 @@ NOTE: Always check datasheet, some vary!
 Copy this checklist when shopping:
 
 ```
-[ ] Arduino Uno R3 board
+[ ] Arduino board (Uno R3 or Mega 2560)
 [ ] 3.2" TFT SPI 240x320 display with SD slot
+[ ] DS3231 or DS1307 RTC module (I2C)
+[ ] CR2032 battery for RTC
 [ ] Hall effect sensor (A3144 or similar)
 [ ] 12+ neodymium magnets (5-10mm)
 [ ] 2 tactile push buttons
 [ ] Micro SD card (FAT32 formatted)
 [ ] Breadboard (half size minimum)
 [ ] 20-30 jumper wires (male-male and male-female)
-[ ] USB cable (Type A to Type B)
+[ ] USB cable (Type A to Type B for Uno, or USB-B for Mega)
 [ ] (Optional) 5V power supply
 [ ] (Optional) Project enclosure
 [ ] (Optional) Mounting tape/adhesive

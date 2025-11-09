@@ -20,9 +20,11 @@ This guide provides step-by-step wiring instructions for connecting all componen
 | TFT SCK | SPI | D13 | Hardware SPI (can't change) |
 | TFT MISO | SPI | D12 | Hardware SPI (can't change) |
 | SD CS | Digital Output | D4 | SD Card Chip Select |
+| RTC SDA | I2C | A4 (Uno) / D20 (Mega) | I2C Data (can't change) |
+| RTC SCL | I2C | A5 (Uno) / D21 (Mega) | I2C Clock (can't change) |
 | Hall Sensor | Digital Input | D5 | With internal pullup |
-| Daily Reset | Digital Input | D6 | Button with internal pullup |
-| Trip Reset | Digital Input | D7 | Button with internal pullup |
+| Today Reset | Digital Input | D6 | Button with internal pullup |
+| All Reset | Digital Input | D7 | Button with internal pullup |
 
 ## Step-by-Step Wiring
 
@@ -71,7 +73,44 @@ Arduino Uno                TFT Display
                           └─────────┘
 ```
 
-### Step 2: SD Card (on TFT Module)
+### Step 2: RTC Module (I2C)
+
+The DS3231 or DS1307 RTC module keeps track of time, even when power is disconnected (thanks to backup battery).
+
+```
+RTC Module Pin Connections:
+===========================
+
+RTC Pin    Wire Color*   Arduino Uno   Arduino Mega   Notes
+--------   -----------   -----------   ------------   -----
+VCC        Red           5V            5V             Power
+GND        Black         GND           GND            Ground
+SDA        Blue          A4            D20            I2C Data
+SCL        Yellow        A5            D21            I2C Clock
+
+*Wire colors are suggestions for easy identification
+```
+
+**Important Notes:**
+- RTC uses I2C communication (2-wire)
+- SDA/SCL pins are **hardware-specific** and cannot be changed:
+  - **Arduino Uno**: SDA = A4, SCL = A5
+  - **Arduino Mega**: SDA = D20, SCL = D21
+  - **Arduino Nano**: SDA = A4, SCL = A5
+- Most RTC modules include pull-up resistors (no external resistors needed)
+- CR2032 battery should be installed on RTC module for time backup
+- Some modules have an additional SQW (Square Wave) pin - leave it unconnected
+
+**Battery Installation:**
+```
+DS3231/DS1307 Module
+┌─────────────────┐
+│  CR2032 Slot    │  ← Insert CR2032 battery here
+│  (back of PCB)  │     Positive (+) side usually up
+└─────────────────┘
+```
+
+### Step 3: SD Card (on TFT Module)
 
 Most 3.2" TFT displays have an SD card slot on the back. These share the SPI bus with the display.
 
@@ -103,7 +142,7 @@ Arduino    SD Card Slot
   GND ──────► GND
 ```
 
-### Step 3: Hall Effect Sensor
+### Step 4: Hall Effect Sensor
 
 The Hall sensor detects magnets passing by. Typically in a TO-92 package (3 pins).
 
@@ -165,13 +204,13 @@ Note: D5 has internal pullup enabled in code
   5V  ──────────────────► Hall Sensor VCC (Pin 1)
 ```
 
-### Step 4: Push Buttons
+### Step 5: Push Buttons
 
 Two momentary push buttons for reset functions.
 
 **Button Wiring (per button):**
 ```
-Button 1 (Daily Reset):
+Button 1 (Today Reset):
 
    Arduino D6 ──────┐
                     │
@@ -185,7 +224,7 @@ Internal pullup resistor enabled in code (no external resistor needed)
 ```
 
 ```
-Button 2 (Trip Reset):
+Button 2 (All Reset):
 
    Arduino D7 ──────┐
                     │
@@ -215,7 +254,7 @@ Many tactile switches have 4 pins (2 pairs). Pins are connected in pairs:
     3 ──── 4
 ```
 
-### Step 5: Power Supply
+### Step 6: Power Supply
 
 **Option A: USB Power (Easiest for Testing)**
 ```
@@ -254,7 +293,7 @@ Cons: Batteries need replacement/recharging
 Runtime: ~8-12 hours with 9V, longer with AA
 ```
 
-### Step 6: Power Distribution on Breadboard
+### Step 7: Power Distribution on Breadboard
 
 **Breadboard Power Rails:**
 ```
@@ -262,11 +301,13 @@ Arduino 5V Pin ──────┬──► Breadboard + (Red) Rail
                      │
                      ├──► TFT VCC
                      ├──► TFT LED
+                     ├──► RTC VCC
                      └──► Hall Sensor VCC
 
 Arduino GND Pin ─────┬──► Breadboard - (Blue/Black) Rail
                      │
                      ├──► TFT GND
+                     ├──► RTC GND
                      ├──► Hall Sensor GND
                      ├──► Button 1 (other side)
                      └──► Button 2 (other side)

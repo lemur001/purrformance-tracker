@@ -9,15 +9,21 @@ A comprehensive Arduino-based speedometer and odometer system for cat exercise w
 
 ### Real-Time Tracking
 - **Current Speed**: Live speed display in MPH (0.1 MPH precision)
-- **Trip Odometer**: Current session distance in miles (0.1 mile precision)
+- **Miles Today**: Automatically resets at midnight
 - **Smart Validation**: Filters out false readings from wheel rocking
 - **Auto-Reset**: Speed automatically resets to 0 after 4 seconds of inactivity
 
-### Daily Leaderboard
-- **Daily Top Speed**: Highest speed achieved today
-- **Daily Total Miles**: Total distance covered today
-- **Persistent Storage**: Data saved to SD card, survives power loss
-- **Easy Reset**: Dedicated buttons for daily and trip resets
+### High Scores (All-Time Records)
+- **Top Speed**: Fastest speed ever achieved
+- **Total Miles**: Cumulative lifetime distance
+- **Day Miles**: Total miles run during daylight hours
+- **Night Miles**: Total miles run during nighttime hours
+- **Persistent Storage**: All data saved to SD card, survives power loss
+
+### Day/Night Tracking
+- **Automatic Detection**: Uses RTC and sunrise/sunset calculations for Chicago
+- **Location-Based**: Calculates daylight hours based on latitude/longitude
+- **Seasonal Adjustment**: Automatically adapts to changing daylight hours throughout the year
 
 ### Safety Features
 - **Speed Validation**: Rejects readings above 35 MPH (impossible for house cats)
@@ -27,14 +33,15 @@ A comprehensive Arduino-based speedometer and odometer system for cat exercise w
 ## Hardware Requirements
 
 ### Components
-1. **Arduino Board** (Uno or Mega recommended for better memory)
+1. **Arduino Board** (Mega recommended for memory, Uno works)
 2. **3.2" TFT SPI Display** (240x320 v1.0 with SD card slot)
-3. **Hall Effect Sensor** (A3144, SS49E, or similar)
-4. **12 Magnets** (evenly spaced on wheel rim)
-5. **2 Push Buttons** (for reset functions)
-6. **Micro SD Card** (for data persistence)
-7. **Breadboard and Jumper Wires**
-8. **Pull-up Resistors** (if not using internal pull-ups)
+3. **DS3231 or DS1307 RTC Module** (I2C real-time clock)
+4. **Hall Effect Sensor** (A3144, SS49E, or similar)
+5. **12 Magnets** (evenly spaced on wheel rim)
+6. **2 Push Buttons** (for reset functions)
+7. **Micro SD Card** (for data persistence)
+8. **Breadboard and Jumper Wires**
+9. **CR2032 Battery** (for RTC backup)
 
 ### Cat Wheel Specifications
 - **Diameter**: 118 inches (outer)
@@ -96,22 +103,41 @@ Open Arduino IDE and install these libraries via Library Manager (Sketch → Inc
 
 - **Adafruit GFX Library** (by Adafruit)
 - **Adafruit ILI9341** (by Adafruit)
+- **RTClib** (by Adafruit) - for real-time clock support
 - **SD** (built-in, should already be available)
 - **SPI** (built-in, should already be available)
+- **Wire** (built-in, should already be available)
 
-### 2. Upload the Code
+### 2. Set the Time on RTC Module
+**IMPORTANT**: Before first use, you need to set the correct time on the RTC module.
+
+1. Open `CatWheelSpeedometer.ino` in Arduino IDE
+2. Find line ~140 where it says: `rtc.adjust(DateTime(2024, 1, 1, 12, 0, 0));`
+3. Change to current date/time. For example, for Jan 15, 2024 at 3:30 PM:
+   ```cpp
+   rtc.adjust(DateTime(2024, 1, 15, 15, 30, 0));
+   // Format: (year, month, day, hour, minute, second)
+   ```
+4. Upload the code (see step below)
+5. After first upload, you can comment out this line (add `//` at the start) to prevent resetting time on each reboot
+
+**OR** use compile-time auto-set:
+```cpp
+rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+```
+
+### 3. Upload the Code
 1. Connect your Arduino to your computer via USB
-2. Open `CatWheelSpeedometer.ino` in Arduino IDE
-3. Select your board type: `Tools → Board → Arduino Uno` (or your board)
-4. Select the correct port: `Tools → Port → COM_X` (or `/dev/ttyUSB0` on Linux)
-5. Click the Upload button (→)
+2. Select your board type: `Tools → Board → Arduino Mega` (or Arduino Uno)
+3. Select the correct port: `Tools → Port → COM_X` (or `/dev/ttyUSB0` on Linux)
+4. Click the Upload button (→)
 
-### 3. Prepare the SD Card
+### 4. Prepare the SD Card
 1. Format a micro SD card as FAT32
 2. Insert it into the TFT display's SD card slot
 3. The sketch will create `catwheel.txt` automatically on first run
 
-### 4. Physical Installation
+### 5. Physical Installation
 
 #### Magnet Placement
 1. Mark 12 evenly spaced positions around the wheel rim (30° apart)
@@ -130,30 +156,27 @@ Open Arduino IDE and install these libraries via Library Manager (Sketch → Inc
 
 ```
 ╔════════════════════════════╗
-║      CAT WHEEL             ║
-║════════════════════════════║
-║  Current Speed             ║
+║  Speed                     ║
+║   25.3 MPH                ║
 ║                            ║
-║     25.3 MPH              ║
-║                            ║
-║  Trip Miles                ║
-║                            ║
-║      2.4 mi               ║
+║  Miles Today               ║
+║    2.4 mi                 ║
 ║                            ║
 ║════════════════════════════║
-║      DAILY BEST            ║
-║                            ║
+║      HIGH SCORES           ║
+║════════════════════════════║
 ║  Top Speed:    28.7 MPH    ║
+║  Total Miles:  152.3 mi    ║
+║  Day Miles:     95.8 mi    ║
+║  Night Miles:   56.5 mi    ║
 ║                            ║
-║  Total Miles:   5.2 mi     ║
-║                            ║
-║  D6:Daily D7:Trip Reset    ║
+║ BTN1:Reset Today BTN2:All  ║
 ╚════════════════════════════╝
 ```
 
 ### Button Functions
-- **D6 (Daily Reset)**: Resets daily top speed and daily distance to 0
-- **D7 (Trip Reset)**: Resets current trip odometer to 0
+- **BTN1 (D6 - Today Reset)**: Resets today's miles to 0
+- **BTN2 (D7 - All Reset)**: Resets ALL high scores (top speed, total miles, day/night miles) - use carefully!
 
 ### Speed Calculations
 The system calculates speed using:
@@ -165,14 +188,27 @@ Speed (MPH) = (30.89 / time_ms) × 3,600,000 / 63,360
 
 ### Data Persistence
 All data is automatically saved to the SD card in `catwheel.txt`:
-- Daily top speed (updated when beaten)
-- Daily total distance (updated every rotation)
+- Today's distance (automatically resets at midnight)
+- Day miles (cumulative daylight running)
+- Night miles (cumulative nighttime running)
 - Lifetime top speed (all-time record)
-- Lifetime total miles (cumulative)
+- Lifetime total miles (cumulative all-time)
 
-**Note**: Data is saved after every wheel rotation and whenever records are broken, ensuring minimal data loss if power is interrupted.
+**Note**: Data is saved after every wheel rotation and whenever records are broken, ensuring minimal data loss if power is interrupted. RTC keeps time even when powered off (with CR2032 battery backup).
 
 ## Troubleshooting
+
+### RTC Issues
+**Problem**: "RTC not found" error on startup
+- Check I2C wiring (SDA and SCL pins)
+- Verify RTC module has power (VCC and GND)
+- Try scanning I2C bus (search "I2C scanner Arduino" for test code)
+- Confirm you're using correct RTC library (RTClib by Adafruit)
+
+**Problem**: Time is wrong or resets
+- Set time using instructions above
+- Check CR2032 battery in RTC module (should be ~3V)
+- Verify you commented out `rtc.adjust()` after first upload
 
 ### Display Issues
 **Problem**: Display is white/blank/garbled
