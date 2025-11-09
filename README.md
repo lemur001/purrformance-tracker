@@ -170,13 +170,13 @@ rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
 ║  Day Miles:     95.8 mi    ║
 ║  Night Miles:   56.5 mi    ║
 ║                            ║
-║ BTN1:Reset Today BTN2:All  ║
+║ Reset Day:B1 All:B2        ║
 ╚════════════════════════════╝
 ```
 
 ### Button Functions
-- **BTN1 (D6 - Today Reset)**: Resets today's miles to 0
-- **BTN2 (D7 - All Reset)**: Resets ALL high scores (top speed, total miles, day/night miles) - use carefully!
+- **B1 (D6 - Day Reset)**: Resets today's miles to 0
+- **B2 (D7 - All Reset)**: Resets ALL high scores (top speed, total miles, day/night miles) - use carefully!
 
 ### Speed Calculations
 The system calculates speed using:

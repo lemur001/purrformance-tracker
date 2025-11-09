@@ -494,7 +494,7 @@ void drawStaticUI() {
   tft.setTextColor(COLOR_LABEL);
   tft.setTextSize(1);
   tft.setCursor(3, 305);
-  tft.println(F("BTN1:Reset Today BTN2:All"));
+  tft.println(F("Reset Day:B1 All:B2"));
 }
 
 void updateAllDisplayValues() {
