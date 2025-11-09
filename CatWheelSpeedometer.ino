@@ -101,22 +101,18 @@ bool needsFullRedraw = true;
 
 // ==================== SETUP ====================
 void setup() {
-  Serial.begin(9600);
-  Serial.println(F("Cat Wheel Speedometer Starting..."));
-
   // Initialize pins
   pinMode(HALL_SENSOR_PIN, INPUT_PULLUP);
   pinMode(TODAY_RESET_BTN, INPUT_PULLUP);
   pinMode(ALL_RESET_BTN, INPUT_PULLUP);
-  pinMode(TFT_LED, OUTPUT);  // Backlight control
-  pinMode(BRIGHTNESS_POT, INPUT);  // Brightness potentiometer
+  pinMode(TFT_LED, OUTPUT);
+  pinMode(BRIGHTNESS_POT, INPUT);
 
-  // Set initial brightness (read from pot)
   updateBrightness();
 
   // Initialize TFT Display
   tft.begin();
-  tft.setRotation(0);  // Portrait mode (240 wide x 320 tall)
+  tft.setRotation(0);
   tft.fillScreen(COLOR_BG);
 
   // Display startup message
@@ -128,41 +124,23 @@ void setup() {
   tft.println(F("System..."));
 
   // Initialize RTC
-  Serial.print(F("Initializing RTC..."));
   if (!rtc.begin()) {
-    Serial.println(F("RTC not found!"));
     tft.setTextColor(COLOR_SPEED);
     tft.setTextSize(1);
     tft.setCursor(40, 200);
     tft.println(F("RTC Error!"));
     tft.setCursor(20, 215);
     tft.println(F("Check wiring"));
-    while (1) delay(1000); // Halt
+    while (1) delay(1000);
   }
 
   // Check if RTC lost power
   if (rtc.lostPower()) {
-    Serial.println(F("RTC lost power, setting time!"));
-    // Set to compile time if you want:
-    // rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
-    // Or set manually - example: Jan 1, 2024, 12:00:00
-    rtc.adjust(DateTime(2024, 1, 1, 12, 0, 0));
+    rtc.adjust(DateTime(2024, 11, 9, 12, 0, 0));
   }
-  Serial.println(F("RTC OK"));
 
   // Initialize SD Card
-  Serial.print(F("Initializing SD card..."));
-  if (!SD.begin(SD_CS)) {
-    Serial.println(F("SD Card failed or not present"));
-    tft.setTextColor(COLOR_SPEED);
-    tft.setTextSize(1);
-    tft.setCursor(40, 235);
-    tft.println(F("SD Card Error!"));
-    tft.setCursor(20, 250);
-    tft.println(F("Data won't save"));
-    delay(3000);
-  } else {
-    Serial.println(F("SD Card initialized"));
+  if (SD.begin(SD_CS)) {
     loadDataFromSD();
   }
 
@@ -175,8 +153,6 @@ void setup() {
   // Draw initial display
   drawStaticUI();
   updateAllDisplayValues();
-
-  Serial.println(F("Setup complete!"));
 }
 
 // ==================== MAIN LOOP ====================
@@ -245,11 +221,7 @@ void handleMagnetDetection() {
 
       updateSpeedDisplay();
     } else {
-      // Speed too high - false reading, ignore it
-      Serial.print(F("Rejected speed: "));
-      Serial.print(calculatedSpeed);
-      Serial.println(F(" MPH (too fast)"));
-      return;
+      return; // Speed too high
     }
   } else {
     // First valid reading
@@ -321,12 +293,10 @@ void handleButtons() {
 void checkDayChange() {
   DateTime now = rtc.now();
   if (now.day() != lastDay) {
-    // New day! Reset today's distance
     todayDistance = 0.0;
     lastDay = now.day();
     updateTodayDistanceDisplay();
     saveDataToSD();
-    Serial.println(F("New day - today's miles reset"));
   }
 }
 
@@ -349,8 +319,6 @@ void resetTodayStats() {
   magnetCounter = 0;
   updateTodayDistanceDisplay();
   saveDataToSD();
-
-  Serial.println(F("Today's miles reset"));
 }
 
 void resetAllStats() {
@@ -360,11 +328,8 @@ void resetAllStats() {
   nightMiles = 0.0;
   todayDistance = 0.0;
   magnetCounter = 0;
-
   updateAllDisplayValues();
   saveDataToSD();
-
-  Serial.println(F("All high scores reset"));
 }
 
 // ==================== DAY/NIGHT CALCULATION ====================
@@ -443,21 +408,14 @@ void loadDataFromSD() {
       nightMiles = line.substring(commas[1] + 1, commas[2]).toFloat();
       lifetimeTopSpeed = line.substring(commas[2] + 1, commas[3]).toFloat();
       lifetimeTotalMiles = line.substring(commas[3] + 1).toFloat();
-
-      Serial.println(F("Data loaded from SD"));
     }
-  } else {
-    Serial.println(F("No existing data file, starting fresh"));
   }
 }
 
 void saveDataToSD() {
-  // Delete old file
   if (SD.exists("catwheel.txt")) {
     SD.remove("catwheel.txt");
   }
-
-  // Write new data
   File dataFile = SD.open("catwheel.txt", FILE_WRITE);
   if (dataFile) {
     dataFile.print(todayDistance, 1);
@@ -470,10 +428,6 @@ void saveDataToSD() {
     dataFile.print(',');
     dataFile.println(lifetimeTotalMiles, 1);
     dataFile.close();
-
-    Serial.println(F("Data saved to SD"));
-  } else {
-    Serial.println(F("Error writing to SD card"));
   }
 }
 
