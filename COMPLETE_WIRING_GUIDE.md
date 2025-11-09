@@ -31,7 +31,7 @@
 | **DC** | Digital | **D9** | Data/Command |
 | **SDI(MOSI)** | SPI | **D11** | Data to display |
 | **SCK** | SPI | **D13** | SPI clock |
-| **LED** | Power | **5V** | Backlight (can use 3.3V for dimmer) |
+| **LED** | Digital PWM | **D3** | Backlight (brightness controlled by pot) |
 | **SDO(MISO)** | SPI | **D12** | Data from display |
 
 **IGNORE these pins on your display:**
@@ -77,6 +77,16 @@
 | **Button 2** | **D7** | **GND** | Reset all high scores |
 
 **Note**: Internal pullup resistors are enabled in code - no external resistors needed!
+
+### 10k Potentiometer (Brightness Control) → Arduino UNO
+
+| Pot Pin | Wire To | Arduino Pin | Notes |
+|---------|---------|-------------|-------|
+| **Pin 1** (one end) | Power Rail | **5V** | Red wire |
+| **Pin 2** (wiper/middle) | Analog | **A0** | Signal wire |
+| **Pin 3** (other end) | Ground Rail | **GND** | Black wire |
+
+**Note**: Turning the knob adjusts display brightness from dim to bright!
 
 ### Power Connections
 
@@ -126,7 +136,7 @@ VCC, GND, CS, RESET, DC, SDI(MOSI), SCK, LED, SDO(MISO), T_IRQ, T_DO, T_DIN, T_C
 5. **DC** → Arduino **D9** (green wire)
 6. **SDI(MOSI)** → Arduino **D11** (blue wire)
 7. **SCK** → Arduino **D13** (purple/white wire)
-8. **LED** → Breadboard + rail (red wire) *for full brightness*
+8. **LED** → Arduino **D3** (white wire) *brightness controlled by potentiometer*
 9. **SDO(MISO)** → Arduino **D12** (gray wire)
 
 **Leave unconnected**: T_IRQ, T_DO, T_DIN, T_CS, T_CLK
@@ -197,7 +207,36 @@ OUT, VCC, GND
 
 ---
 
-### Step 6: Wire the Buttons
+### Step 6: Wire the 10k Potentiometer (Brightness Control)
+
+Your 10k potentiometer controls the display brightness. It has 3 pins.
+
+```
+Potentiometer (looking at it from the front with shaft up):
+
+    Pin 1     Pin 2      Pin 3
+    (left)   (middle)   (right)
+      │         │          │
+      │         │          │
+   to 5V     to A0      to GND
+```
+
+**Wire these pins:**
+
+1. **Pin 1** (left pin when facing front) → Breadboard + rail (red wire)
+2. **Pin 2** (middle pin/wiper) → Arduino **A0** (any color wire)
+3. **Pin 3** (right pin) → Breadboard - rail (black wire)
+
+**How it works:**
+- Turn knob fully counter-clockwise = dimmer display
+- Turn knob fully clockwise = brighter display
+- The code ensures display never goes completely off (minimum brightness)
+
+**Tip**: Orient the pot so that clockwise = brighter. If it's backwards, just swap pins 1 and 3.
+
+---
+
+### Step 7: Wire the Buttons
 
 You have 5 buttons - you only need 2. They're small tactile switches.
 
@@ -233,7 +272,7 @@ Arduino D7 ───┐
 
 ---
 
-### Step 7: Insert the SD Card
+### Step 8: Insert the SD Card
 
 1. **Format your SD card** as FAT32 (use computer)
 2. **Eject safely** from computer
@@ -257,7 +296,8 @@ Arduino D7 ───┐
 | **Purple/White** | TFT SCK (D13) |
 | **Gray** | TFT MISO (D12) |
 | **Brown** | SD CS (D4) |
-| **White/Yellow** | RTC SCL (A5) |
+| **White** | TFT LED (D3), RTC SCL (A5) |
+| **Any color** | Pot wiper to A0 |
 
 ---
 
@@ -302,6 +342,7 @@ Before uploading code, verify these connections:
 - [ ] DC → D9
 - [ ] SDI(MOSI) → D11
 - [ ] SCK → D13
+- [ ] LED → D3 (NOT 5V!)
 - [ ] SDO(MISO) → D12
 
 ### SD Card:
@@ -324,6 +365,11 @@ Before uploading code, verify these connections:
 ### Buttons:
 - [ ] Button 1: one side → D6, other side → GND
 - [ ] Button 2: one side → D7, other side → GND
+
+### Potentiometer (Brightness):
+- [ ] Left pin → 5V rail
+- [ ] Middle pin (wiper) → A0
+- [ ] Right pin → GND rail
 
 ### Safety Checks:
 - [ ] No wires crossing or touching that shouldn't
@@ -368,13 +414,18 @@ The others (SD, SPI, Wire) are built-in.
 ### 4. Watch the Display
 
 **You should see:**
-1. "Initializing System..." message
+1. "Initializing System..." message (brightness controlled by pot position)
 2. If RTC found: "RTC OK" in Serial Monitor (Tools → Serial Monitor)
 3. If SD card found: "SD Card initialized" in Serial Monitor
 4. Main display appears with:
    - Speed: 0.0 MPH
    - Miles Today: 0.0 mi
    - HIGH SCORES (all zeros initially)
+
+**Test brightness control:**
+- Turn potentiometer knob
+- Display should get brighter/dimmer smoothly
+- Display should never go completely black (min brightness = 20/255)
 
 **If you see errors**, check the Troubleshooting section below.
 

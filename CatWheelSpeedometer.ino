@@ -26,6 +26,7 @@
 #define TFT_CS    10    // Chip Select
 #define TFT_DC    9     // Data/Command
 #define TFT_RST   8     // Reset
+#define TFT_LED   3     // Backlight control (PWM)
 // MOSI = 11, SCK = 13, MISO = 12 (hardware SPI)
 
 // SD Card Pin
@@ -35,6 +36,9 @@
 #define HALL_SENSOR_PIN    5    // Hall effect sensor input
 #define TODAY_RESET_BTN    6    // Button to reset today's miles
 #define ALL_RESET_BTN      7    // Button to reset all high scores
+
+// Brightness Control
+#define BRIGHTNESS_POT     A0   // 10k potentiometer for brightness control
 
 // Location for Day/Night Calculation (Chicago, IL)
 const float LATITUDE = 41.8781;   // Chicago latitude
@@ -104,6 +108,11 @@ void setup() {
   pinMode(HALL_SENSOR_PIN, INPUT_PULLUP);
   pinMode(TODAY_RESET_BTN, INPUT_PULLUP);
   pinMode(ALL_RESET_BTN, INPUT_PULLUP);
+  pinMode(TFT_LED, OUTPUT);  // Backlight control
+  pinMode(BRIGHTNESS_POT, INPUT);  // Brightness potentiometer
+
+  // Set initial brightness (read from pot)
+  updateBrightness();
 
   // Initialize TFT Display
   tft.begin();
@@ -174,6 +183,9 @@ void setup() {
 void loop() {
   // Check for day change (midnight reset)
   checkDayChange();
+
+  // Update display brightness based on potentiometer
+  updateBrightness();
 
   // Read hall sensor
   bool currentHallState = digitalRead(HALL_SENSOR_PIN);
@@ -316,6 +328,19 @@ void checkDayChange() {
     saveDataToSD();
     Serial.println(F("New day - today's miles reset"));
   }
+}
+
+// ==================== BRIGHTNESS CONTROL ====================
+void updateBrightness() {
+  // Read potentiometer value (0-1023)
+  int potValue = analogRead(BRIGHTNESS_POT);
+
+  // Map to PWM range (0-255) for LED brightness
+  // Add minimum brightness of 20 so display is never completely off
+  int brightness = map(potValue, 0, 1023, 20, 255);
+
+  // Set LED brightness using PWM
+  analogWrite(TFT_LED, brightness);
 }
 
 // ==================== RESET FUNCTIONS ====================
