@@ -3,9 +3,9 @@
  *
  * Hardware:
  * - Adafruit SSD1306 OLED Display (128x64, I2C)
- * - DS3231 or DS1307 RTC Module (I2C)
- * - Hall Effect Sensor
- * - 12 Magnets on cat wheel
+ * - DS3231 RTC Module (I2C) with CR2032 battery
+ * - Hall Effect Sensor (G R Y pins)
+ * - 1 Reset Button (hold 3 seconds to reset all)
  * - Arduino Mega 2560
  *
  * Wheel Specifications:
@@ -17,8 +17,6 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <SPI.h>
-#include <SD.h>
 #include <RTClib.h>
 
 // ==================== PIN DEFINITIONS ====================
@@ -27,22 +25,16 @@
 // SCL = D21 (Mega 2560)
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
-#define OLED_RESET -1  // No reset pin
-#define SCREEN_ADDRESS 0x3C  // Common I2C address (try 0x3D if this doesn't work)
-
-// SD Card Pin
-#define SD_CS     4     // SD Card Chip Select
-// SD uses hardware SPI: MOSI = 51, SCK = 52, MISO = 50
+#define OLED_RESET -1
+#define SCREEN_ADDRESS 0x3C  // Try 0x3D if display doesn't work
 
 // Sensor and Button Pins
 #define HALL_SENSOR_PIN    5    // Hall effect sensor input
-#define TODAY_RESET_BTN    6    // Button to reset today's miles
-#define ALL_RESET_BTN      7    // Button to reset all high scores
+#define RESET_ALL_BTN      6    // Hold 3 seconds to reset all stats
 
 // Location for Day/Night Calculation (Chicago, IL)
 const float LATITUDE = 41.8781;
 const float LONGITUDE = -87.6298;
-const int TIMEZONE_OFFSET = -6;
 
 // ==================== CONSTANTS ====================
 const float WHEEL_DIAMETER = 118.0;
@@ -52,10 +44,10 @@ const float DISTANCE_PER_MAGNET = WHEEL_CIRCUMFERENCE / MAGNET_COUNT;
 const float INCHES_PER_MILE = 63360.0;
 
 // Timing and Validation
-const unsigned long SPEED_TIMEOUT = 4000;
-const unsigned long MIN_MAGNET_INTERVAL = 45;
-const float MAX_CAT_SPEED = 35.0;
-const unsigned long DEBOUNCE_DELAY = 10;
+const unsigned long SPEED_TIMEOUT = 4000;          // 4 sec timeout
+const unsigned long MIN_MAGNET_INTERVAL = 45;      // 45ms debounce
+const float MAX_CAT_SPEED = 35.0;                  // 35 MPH max
+const unsigned long RESET_HOLD_TIME = 3000;        // 3 sec hold to reset
 
 // ==================== GLOBAL VARIABLES ====================
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -67,7 +59,7 @@ unsigned long lastValidMagnetTime = 0;
 float currentSpeed = 0.0;
 int magnetCounter = 0;
 
-// Stats
+// Stats (stored in RAM only - no SD card)
 float todayDistance = 0.0;
 float dayMiles = 0.0;
 float nightMiles = 0.0;
@@ -80,23 +72,20 @@ uint8_t lastDay = 0;
 // Hall Sensor State
 bool lastHallState = HIGH;
 
-// Button States
-bool lastTodayResetState = HIGH;
-bool lastAllResetState = HIGH;
-unsigned long lastTodayResetDebounce = 0;
-unsigned long lastAllResetDebounce = 0;
+// Button State
+bool lastResetState = HIGH;
+unsigned long resetPressStartTime = 0;
+bool resetInProgress = false;
 
 // ==================== SETUP ====================
 void setup() {
   // Initialize pins
   pinMode(HALL_SENSOR_PIN, INPUT_PULLUP);
-  pinMode(TODAY_RESET_BTN, INPUT_PULLUP);
-  pinMode(ALL_RESET_BTN, INPUT_PULLUP);
+  pinMode(RESET_ALL_BTN, INPUT_PULLUP);
 
   // Initialize OLED Display
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    // Display failed - halt
-    while(1);
+    while(1); // Display failed - halt
   }
 
   display.clearDisplay();
@@ -118,11 +107,6 @@ void setup() {
 
   if (rtc.lostPower()) {
     rtc.adjust(DateTime(2024, 11, 10, 12, 0, 0));
-  }
-
-  // Initialize SD Card
-  if (SD.begin(SD_CS)) {
-    loadDataFromSD();
   }
 
   // Get current day for tracking
@@ -156,8 +140,8 @@ void loop() {
     updateDisplay();
   }
 
-  // Check buttons
-  handleButtons();
+  // Check reset button (hold 3 seconds)
+  handleResetButton();
 
   delay(10);
 }
@@ -183,7 +167,6 @@ void handleMagnetDetection() {
 
       if (currentSpeed > lifetimeTopSpeed) {
         lifetimeTopSpeed = currentSpeed;
-        saveDataToSD();
       }
 
       updateDisplay();
@@ -211,37 +194,46 @@ void handleMagnetDetection() {
     magnetCounter = 0;
 
     updateDisplay();
-    saveDataToSD();
   }
 }
 
 // ==================== BUTTON HANDLING ====================
-void handleButtons() {
+void handleResetButton() {
+  bool resetState = digitalRead(RESET_ALL_BTN);
   unsigned long currentTime = millis();
 
-  // Today Reset Button
-  bool todayResetState = digitalRead(TODAY_RESET_BTN);
-  if (todayResetState != lastTodayResetState) {
-    lastTodayResetDebounce = currentTime;
+  // Button just pressed
+  if (resetState == LOW && lastResetState == HIGH) {
+    resetPressStartTime = currentTime;
+    resetInProgress = true;
   }
-  if ((currentTime - lastTodayResetDebounce) > DEBOUNCE_DELAY) {
-    if (todayResetState == LOW && lastTodayResetState == HIGH) {
-      resetTodayStats();
-    }
-  }
-  lastTodayResetState = todayResetState;
 
-  // All Reset Button
-  bool allResetState = digitalRead(ALL_RESET_BTN);
-  if (allResetState != lastAllResetState) {
-    lastAllResetDebounce = currentTime;
-  }
-  if ((currentTime - lastAllResetDebounce) > DEBOUNCE_DELAY) {
-    if (allResetState == LOW && lastAllResetState == HIGH) {
+  // Button being held
+  if (resetState == LOW && resetInProgress) {
+    unsigned long holdDuration = currentTime - resetPressStartTime;
+
+    // Held for 3 seconds - reset all stats
+    if (holdDuration >= RESET_HOLD_TIME) {
       resetAllStats();
+      resetInProgress = false;
+
+      // Show confirmation message
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setCursor(25, 24);
+      display.println(F("RESET!"));
+      display.display();
+      delay(1000);
+      updateDisplay();
     }
   }
-  lastAllResetState = allResetState;
+
+  // Button released
+  if (resetState == HIGH && lastResetState == LOW) {
+    resetInProgress = false;
+  }
+
+  lastResetState = resetState;
 }
 
 // ==================== DAY CHANGE DETECTION ====================
@@ -251,18 +243,10 @@ void checkDayChange() {
     todayDistance = 0.0;
     lastDay = now.day();
     updateDisplay();
-    saveDataToSD();
   }
 }
 
-// ==================== RESET FUNCTIONS ====================
-void resetTodayStats() {
-  todayDistance = 0.0;
-  magnetCounter = 0;
-  updateDisplay();
-  saveDataToSD();
-}
-
+// ==================== RESET FUNCTION ====================
 void resetAllStats() {
   lifetimeTopSpeed = 0.0;
   lifetimeTotalMiles = 0.0;
@@ -270,8 +254,6 @@ void resetAllStats() {
   nightMiles = 0.0;
   todayDistance = 0.0;
   magnetCounter = 0;
-  updateDisplay();
-  saveDataToSD();
 }
 
 // ==================== DAY/NIGHT CALCULATION ====================
@@ -310,109 +292,71 @@ float calculateSunset(int dayOfYear) {
   return offset + amplitude * cos(phase);
 }
 
-// ==================== SD CARD FUNCTIONS ====================
-void loadDataFromSD() {
-  File dataFile = SD.open("catwheel.txt", FILE_READ);
-  if (dataFile) {
-    String line = dataFile.readStringUntil('\n');
-    dataFile.close();
-
-    int commas[4];
-    int commaCount = 0;
-    for (int i = 0; i < line.length() && commaCount < 4; i++) {
-      if (line.charAt(i) == ',') {
-        commas[commaCount++] = i;
-      }
-    }
-
-    if (commaCount == 4) {
-      todayDistance = line.substring(0, commas[0]).toFloat();
-      dayMiles = line.substring(commas[0] + 1, commas[1]).toFloat();
-      nightMiles = line.substring(commas[1] + 1, commas[2]).toFloat();
-      lifetimeTopSpeed = line.substring(commas[2] + 1, commas[3]).toFloat();
-      lifetimeTotalMiles = line.substring(commas[3] + 1).toFloat();
-    }
-  }
-}
-
-void saveDataToSD() {
-  if (SD.exists("catwheel.txt")) {
-    SD.remove("catwheel.txt");
-  }
-  File dataFile = SD.open("catwheel.txt", FILE_WRITE);
-  if (dataFile) {
-    dataFile.print(todayDistance, 1);
-    dataFile.print(',');
-    dataFile.print(dayMiles, 1);
-    dataFile.print(',');
-    dataFile.print(nightMiles, 1);
-    dataFile.print(',');
-    dataFile.print(lifetimeTopSpeed, 1);
-    dataFile.print(',');
-    dataFile.println(lifetimeTotalMiles, 1);
-    dataFile.close();
-  }
-}
-
 // ==================== DISPLAY FUNCTION ====================
 void updateDisplay() {
   display.clearDisplay();
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  // Line 1: Current Speed (large)
+  // Line 0: "----------DAILY-----------" (centered)
   display.setCursor(0, 0);
-  display.print(F("Speed:"));
-  display.setCursor(42, 0);
-  display.setTextSize(2);
-  char speedStr[7];
-  dtostrf(currentSpeed, 4, 1, speedStr);
-  display.print(speedStr);
-  display.setTextSize(1);
-  display.print(F("MPH"));
+  display.println(F("----------DAILY----------"));
 
-  // Line 2: Miles Today
+  // Line 1: Speed - left label, right-aligned value
+  display.setCursor(0, 8);
+  display.print(F("Speed:"));
+  char speedStr[9];
+  dtostrf(currentSpeed, 7, 1, speedStr);  // Right-pad to 7 chars (xxx.x)
+  display.setCursor(68, 8);  // Position for right-aligned values
+  display.print(speedStr);
+  display.print(F(" MPH"));
+
+  // Line 2: Distance - left label, right-aligned value
   display.setCursor(0, 16);
-  display.print(F("Today:"));
+  display.print(F("Distance:"));
   char todayStr[7];
-  dtostrf(todayDistance, 5, 1, todayStr);
-  display.setCursor(42, 16);
+  dtostrf(todayDistance, 6, 1, todayStr);  // Right-pad to 6 chars (xxx.x)
+  display.setCursor(74, 16);
   display.print(todayStr);
   display.print(F(" mi"));
 
-  // Line 3: Separator
+  // Line 3: "-----HIGH SCORES-----" (centered)
   display.setCursor(0, 24);
-  display.println(F("---HIGH SCORES---"));
+  display.println(F("-----HIGH SCORES-----"));
 
-  // Line 4: Top Speed
+  // Line 4: Top Speed - left label, right-aligned value
   display.setCursor(0, 32);
-  display.print(F("Top:  "));
+  display.print(F("Top Speed:"));
   char topStr[7];
-  dtostrf(lifetimeTopSpeed, 4, 1, topStr);
+  dtostrf(lifetimeTopSpeed, 6, 1, topStr);
+  display.setCursor(74, 32);
   display.print(topStr);
   display.print(F(" MPH"));
 
-  // Line 5: Total Miles
+  // Line 5: Total Distance - left label, right-aligned value
   display.setCursor(0, 40);
-  display.print(F("Total:"));
+  display.print(F("Total Dist:"));
   char totalStr[7];
-  dtostrf(lifetimeTotalMiles, 5, 1, totalStr);
+  dtostrf(lifetimeTotalMiles, 6, 1, totalStr);
+  display.setCursor(68, 40);
   display.print(totalStr);
   display.print(F(" mi"));
 
-  // Line 6: Day Miles
+  // Line 6: Daytime - left label, right-aligned value
   display.setCursor(0, 48);
-  display.print(F("Day:  "));
+  display.print(F("Daytime:"));
   char dayStr[7];
-  dtostrf(dayMiles, 5, 1, dayStr);
+  dtostrf(dayMiles, 6, 1, dayStr);
+  display.setCursor(68, 48);
   display.print(dayStr);
   display.print(F(" mi"));
 
-  // Line 7: Night Miles
+  // Line 7: Nighttime - left label, right-aligned value
   display.setCursor(0, 56);
-  display.print(F("Night:"));
+  display.print(F("Nighttime:"));
   char nightStr[7];
-  dtostrf(nightMiles, 5, 1, nightStr);
+  dtostrf(nightMiles, 6, 1, nightStr);
+  display.setCursor(68, 56);
   display.print(nightStr);
   display.print(F(" mi"));
 
