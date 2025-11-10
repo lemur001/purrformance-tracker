@@ -3,12 +3,13 @@
 ## 🎯 You Have Everything - Let's Build It!
 
 ### Your Components Checklist:
-- ✅ Elegoo UNO R3
+- ✅ Arduino Mega 2560 (REQUIRED - code too large for Uno/Nano)
 - ✅ 3.2" TFT SPI 240x320 Touchscreen Display (with SD slot)
 - ✅ DS3231 RTC Module (with CR2032 battery installed)
 - ✅ Hall Magnetic Sensor
 - ✅ 12 Magnets (already on cat wheel)
 - ✅ 2 Push Buttons
+- ✅ 10k Potentiometer (brightness control)
 - ✅ 830 Tie-Points Breadboard
 - ✅ Jumper Wires
 - ✅ Micro SD Card
@@ -20,56 +21,60 @@
 
 ## 📋 Complete Pin Connection Table
 
-### TFT Display → Arduino UNO
+### TFT Display → Arduino Mega 2560
 
-| Your TFT Pin | Wire To | Arduino Pin | Notes |
-|--------------|---------|-------------|-------|
+| Your TFT Pin | Wire To | Mega 2560 Pin | Notes |
+|--------------|---------|---------------|-------|
 | **VCC** | Power Rail | **5V** | Red wire recommended |
 | **GND** | Ground Rail | **GND** | Black wire |
 | **CS** | Digital | **D10** | Display chip select |
 | **RESET** | Digital | **D8** | Display reset |
 | **DC** | Digital | **D9** | Data/Command |
-| **SDI(MOSI)** | SPI | **D11** | Data to display |
-| **SCK** | SPI | **D13** | SPI clock |
+| **SDI(MOSI)** | SPI | **D51** | Data to display (NOT D11!) |
+| **SCK** | SPI | **D52** | SPI clock (NOT D13!) |
 | **LED** | Digital PWM | **D3** | Backlight (brightness controlled by pot) |
-| **SDO(MISO)** | SPI | **D12** | Data from display |
+| **SDO(MISO)** | SPI | **D50** | Data from display (NOT D12!) |
 
 **IGNORE these pins on your display:**
 - T_IRQ, T_DO, T_DI, T_CS, T_CLK (touch screen - not used)
 
-### SD Card → Arduino UNO
+**CRITICAL**: Mega 2560 uses different SPI pins than Uno! MOSI=51, SCK=52, MISO=50
 
-| Your SD Pin | Wire To | Arduino Pin | Notes |
-|-------------|---------|-------------|-------|
+### SD Card → Arduino Mega 2560
+
+| Your SD Pin | Wire To | Mega 2560 Pin | Notes |
+|-------------|---------|---------------|-------|
 | **SD_CS** | Digital | **D4** | SD card chip select |
-| **SD_MOSI** | Shared | **D11** | Same as TFT MOSI |
-| **SD_SCK** | Shared | **D13** | Same as TFT SCK |
-| **SD_MISO** | Shared | **D12** | Same as TFT MISO |
+| **SD_MOSI** | Shared | **D51** | Same as TFT MOSI (NOT D11!) |
+| **SD_SCK** | Shared | **D52** | Same as TFT SCK (NOT D13!) |
+| **SD_MISO** | Shared | **D50** | Same as TFT MISO (NOT D12!) |
 
 **Note**: SD card shares SPI pins with TFT display. That's normal and correct!
 
-### DS3231 RTC → Arduino UNO
+### DS3231 RTC → Arduino Mega 2560
 
-| RTC Pin | Wire To | Arduino Pin | Notes |
-|---------|---------|-------------|-------|
+| RTC Pin | Wire To | Mega 2560 Pin | Notes |
+|---------|---------|---------------|-------|
 | **VCC** | Power Rail | **5V** | Red wire |
 | **GND** | Ground Rail | **GND** | Black wire |
-| **SDA** | I2C Data | **A4** | Blue/Green wire |
-| **SCL** | I2C Clock | **A5** | Yellow/White wire |
+| **SDA** | I2C Data | **D20** | Blue/Green wire (NOT A4!) |
+| **SCL** | I2C Clock | **D21** | Yellow/White wire (NOT A5!) |
 
 **Note**: If your RTC has a 4th pin (SQW or 32K), leave it unconnected.
 
-### Hall Sensor → Arduino UNO
+**CRITICAL**: Mega 2560 uses different I2C pins than Uno! SDA=20, SCL=21
 
-| Hall Sensor Pin | Wire To | Arduino Pin | Notes |
-|-----------------|---------|-------------|-------|
-| **S** (Signal) | Digital | **D5** | Yellow wire |
-| **+** (VCC) | Power Rail | **5V** | Red wire |
-| **-** (GND) | Ground Rail | **GND** | Black wire |
+### Hall Sensor → Arduino Mega 2560
 
-**Note**: Your Hall sensor might have labels "S", "VCC", "GND" or just "+", "-", "S"
+| Hall Sensor Pin | Wire To | Mega 2560 Pin | Notes |
+|-----------------|---------|---------------|-------|
+| **Y** (Yellow) | Digital | **D5** | Signal wire |
+| **R** (Red) | Power Rail | **5V** | Power wire |
+| **G** (Green) | Ground Rail | **GND** | Ground wire |
 
-### Buttons → Arduino UNO
+**Note**: Your Hall sensor has G R Y labeling (G=GND, R=VCC, Y=Signal)
+
+### Buttons → Arduino Mega 2560
 
 | Button | Wire 1 To | Wire 2 To | Function |
 |--------|-----------|-----------|----------|
@@ -77,14 +82,15 @@
 | **Button 2** | **D7** | **GND** | Reset all high scores |
 
 **Note**: Internal pullup resistors are enabled in code - no external resistors needed!
+**For 4-pin buttons**: Use diagonal pins (opposite corners)
 
-### 10k Potentiometer (Brightness Control) → Arduino UNO
+### 10k Potentiometer (Brightness Control) → Arduino Mega 2560
 
-| Pot Pin | Wire To | Arduino Pin | Notes |
-|---------|---------|-------------|-------|
-| **Pin 1** (one end) | Power Rail | **5V** | Red wire |
+| Pot Pin | Wire To | Mega 2560 Pin | Notes |
+|---------|---------|---------------|-------|
+| **Pin 1** (one end) | Ground Rail | **GND** | Black wire |
 | **Pin 2** (wiper/middle) | Analog | **A0** | Signal wire |
-| **Pin 3** (other end) | Ground Rail | **GND** | Black wire |
+| **Pin 3** (other end) | Power Rail | **5V** | Red wire |
 
 **Note**: Turning the knob adjusts display brightness from dim to bright!
 
@@ -102,7 +108,7 @@
 
 ### Step 1: Set Up Your Breadboard Power Rails
 
-1. **Place your Arduino UNO** on the table (don't plug into breadboard yet)
+1. **Place your Arduino Mega 2560** on the table (don't plug into breadboard yet)
 2. **Place your 830-point breadboard** in front of you
 3. **Identify the power rails**:
    - Red line = + (positive)
@@ -110,8 +116,8 @@
 
 4. **Connect Arduino to breadboard power rails**:
    ```
-   Arduino 5V pin → Red jumper → Breadboard + rail
-   Arduino GND pin → Black jumper → Breadboard - rail
+   Mega 5V pin → Red jumper → Breadboard + rail
+   Mega GND pin → Black jumper → Breadboard - rail
    ```
 
 **Pro Tip**: Connect the + and - rails on both sides of the breadboard together (top and bottom) for easier wiring.
@@ -131,13 +137,13 @@ VCC, GND, CS, RESET, DC, SDI(MOSI), SCK, LED, SDO(MISO), T_IRQ, T_DO, T_DIN, T_C
 
 1. **VCC** → Breadboard + rail (red wire)
 2. **GND** → Breadboard - rail (black wire)
-3. **CS** → Arduino **D10** (orange wire)
-4. **RESET** → Arduino **D8** (yellow wire)
-5. **DC** → Arduino **D9** (green wire)
-6. **SDI(MOSI)** → Arduino **D11** (blue wire)
-7. **SCK** → Arduino **D13** (purple/white wire)
-8. **LED** → Arduino **D3** (white wire) *brightness controlled by potentiometer*
-9. **SDO(MISO)** → Arduino **D12** (gray wire)
+3. **CS** → Mega **D10** (orange wire)
+4. **RESET** → Mega **D8** (yellow wire)
+5. **DC** → Mega **D9** (green wire)
+6. **SDI(MOSI)** → Mega **D51** (blue wire) **CRITICAL: D51 NOT D11!**
+7. **SCK** → Mega **D52** (purple/white wire) **CRITICAL: D52 NOT D13!**
+8. **LED** → Mega **D3** (white wire) *brightness controlled by potentiometer*
+9. **SDO(MISO)** → Mega **D50** (gray wire) **CRITICAL: D50 NOT D12!**
 
 **Leave unconnected**: T_IRQ, T_DO, T_DIN, T_CS, T_CLK
 
@@ -154,14 +160,14 @@ SD_CS, SD_MOSI, SD_MISO, SD_SCK
 
 **Wire these pins:**
 
-1. **SD_CS** → Arduino **D4** (any color wire)
-2. **SD_MOSI** → Arduino **D11** (share with TFT MOSI - can use same row on breadboard)
-3. **SD_MISO** → Arduino **D12** (share with TFT MISO)
-4. **SD_SCK** → Arduino **D13** (share with TFT SCK)
+1. **SD_CS** → Mega **D4** (any color wire)
+2. **SD_MOSI** → Mega **D51** (share with TFT MOSI - can use same row on breadboard)
+3. **SD_MISO** → Mega **D50** (share with TFT MISO)
+4. **SD_SCK** → Mega **D52** (share with TFT SCK)
 
 **Tip**: Since MOSI, MISO, and SCK are shared between TFT and SD card, you can:
 - Connect both to the same breadboard row, OR
-- Connect both wires directly to the same Arduino pin
+- Connect both wires directly to the same Mega pin
 
 ---
 
@@ -179,8 +185,8 @@ VCC (or 5V), GND, SDA, SCL
 
 1. **VCC** → Breadboard + rail (red wire)
 2. **GND** → Breadboard - rail (black wire)
-3. **SDA** → Arduino **A4** (blue or green wire)
-4. **SCL** → Arduino **A5** (yellow or white wire)
+3. **SDA** → Mega **D20** (blue or green wire) **CRITICAL: D20 NOT A4!**
+4. **SCL** → Mega **D21** (yellow or white wire) **CRITICAL: D21 NOT A5!**
 
 **Check**: Make sure CR2032 battery is inserted on the back of the RTC module!
 
@@ -197,11 +203,11 @@ OR
 OUT, VCC, GND
 ```
 
-**Wire these pins:**
+**Wire these pins (your sensor has G R Y labeling):**
 
-1. **S or OUT** → Arduino **D5** (yellow wire)
-2. **+ or VCC** → Breadboard + rail (red wire)
-3. **- or GND** → Breadboard - rail (black wire)
+1. **Y** (Yellow - Signal) → Mega **D5** (yellow wire)
+2. **R** (Red - VCC) → Breadboard + rail (red wire)
+3. **G** (Green - GND) → Breadboard - rail (black wire)
 
 **Physical Placement**: Mount this sensor near your cat wheel rim (1-5mm away from magnet path). Don't wire it permanently yet - test first!
 
@@ -223,9 +229,9 @@ Potentiometer (looking at it from the front with shaft up):
 
 **Wire these pins:**
 
-1. **Pin 1** (left pin when facing front) → Breadboard + rail (red wire)
-2. **Pin 2** (middle pin/wiper) → Arduino **A0** (any color wire)
-3. **Pin 3** (right pin) → Breadboard - rail (black wire)
+1. **Pin 1** (one outer pin) → Breadboard - rail (black wire) *note: GND not 5V*
+2. **Pin 2** (middle pin/wiper) → Mega **A0** (any color wire)
+3. **Pin 3** (other outer pin) → Breadboard + rail (red wire)
 
 **How it works:**
 - Turn knob fully counter-clockwise = dimmer display
@@ -242,31 +248,31 @@ You have 5 buttons - you only need 2. They're small tactile switches.
 
 **Button 1 (Reset Today's Miles):**
 ```
-Arduino D6 ───┐
-              │
-           Button 1
-              │
-         GND rail ───┘
+Mega D6 ───┐
+           │
+        Button 1
+           │
+      GND rail ───┘
 ```
 
 **How to wire:**
 1. Push button into breadboard (straddle the center gap)
-2. One side of button → Arduino **D6** (any color wire)
-3. Other side of button → Breadboard - rail (black wire)
+2. One side of button (diagonal pin) → Mega **D6** (any color wire)
+3. Other side of button (opposite diagonal pin) → Breadboard - rail (black wire)
 
 **Button 2 (Reset All High Scores):**
 ```
-Arduino D7 ───┐
-              │
-           Button 2
-              │
-         GND rail ───┘
+Mega D7 ───┐
+           │
+        Button 2
+           │
+      GND rail ───┘
 ```
 
 **How to wire:**
 1. Push button into breadboard (straddle the center gap)
-2. One side of button → Arduino **D7** (any color wire)
-3. Other side of button → Breadboard - rail (black wire)
+2. One side of button (diagonal pin) → Mega **D7** (any color wire)
+3. Other side of button (opposite diagonal pin) → Breadboard - rail (black wire)
 
 **Note**: If your buttons have 4 pins, use diagonal pins (pins 1 and 3, or 2 and 4).
 

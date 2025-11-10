@@ -6,7 +6,7 @@
  * - DS3231 or DS1307 RTC Module (I2C)
  * - Hall Effect Sensor
  * - 12 Magnets on cat wheel
- * - Arduino (Mega recommended for memory)
+ * - Arduino Mega 2560 (REQUIRED - code too large for Uno/Nano)
  *
  * Wheel Specifications:
  * - Diameter: 118 inches
@@ -22,15 +22,15 @@
 #include <RTClib.h>
 
 // ==================== PIN DEFINITIONS ====================
-// TFT Display Pins (SPI)
+// TFT Display Pins (SPI) - MEGA 2560
 #define TFT_CS    10    // Chip Select
 #define TFT_DC    9     // Data/Command
 #define TFT_RST   8     // Reset
 #define TFT_LED   3     // Backlight control (PWM)
-// MOSI = 11, SCK = 13, MISO = 12 (hardware SPI)
+// Hardware SPI pins for Mega 2560: MOSI = 51, SCK = 52, MISO = 50
 
 // SD Card Pin
-#define SD_CS     4     // SD Card Chip Select (different from TFT_CS)
+#define SD_CS     4     // SD Card Chip Select (shared SPI bus with display)
 
 // Sensor and Button Pins
 #define HALL_SENSOR_PIN    5    // Hall effect sensor input

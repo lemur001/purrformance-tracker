@@ -33,15 +33,16 @@ A comprehensive Arduino-based speedometer and odometer system for cat exercise w
 ## Hardware Requirements
 
 ### Components
-1. **Arduino Board** (Mega recommended for memory, Uno works)
+1. **Arduino Mega 2560** (REQUIRED - code too large for Uno/Nano)
 2. **3.2" TFT SPI Display** (240x320 v1.0 with SD card slot)
 3. **DS3231 or DS1307 RTC Module** (I2C real-time clock)
 4. **Hall Effect Sensor** (A3144, SS49E, or similar)
 5. **12 Magnets** (evenly spaced on wheel rim)
 6. **2 Push Buttons** (for reset functions)
-7. **Micro SD Card** (for data persistence)
-8. **Breadboard and Jumper Wires**
-9. **CR2032 Battery** (for RTC backup)
+7. **10k Potentiometer** (for brightness control)
+8. **Micro SD Card** (for data persistence)
+9. **Breadboard and Jumper Wires**
+10. **CR2032 Battery** (for RTC backup)
 
 ### Cat Wheel Specifications
 - **Diameter**: 118 inches (outer)
@@ -49,51 +50,70 @@ A comprehensive Arduino-based speedometer and odometer system for cat exercise w
 - **Magnets**: 12 evenly spaced around the rim
 - **Distance per Magnet**: ~30.89 inches
 
-## Wiring Diagram
+## Wiring Diagram (Arduino Mega 2560)
 
 ### TFT Display Connections (SPI)
 ```
-TFT Pin    →    Arduino Pin
+TFT Pin    →    Mega 2560 Pin
 --------------------------------
 VCC        →    5V
 GND        →    GND
 CS         →    D10
 RESET      →    D8
 DC/RS      →    D9
-MOSI       →    D11 (hardware SPI)
-SCK        →    D13 (hardware SPI)
-LED        →    3.3V or 5V
-MISO       →    D12 (hardware SPI)
+MOSI       →    D51 (hardware SPI - NOT D11!)
+SCK        →    D52 (hardware SPI - NOT D13!)
+LED        →    D3 (PWM - brightness control)
+MISO       →    D50 (hardware SPI - NOT D12!)
 ```
 
 ### SD Card Connections
 ```
-SD Pin     →    Arduino Pin
+SD Pin     →    Mega 2560 Pin
 --------------------------------
 CS         →    D4
-MOSI       →    D11 (shared with TFT)
-SCK        →    D13 (shared with TFT)
-MISO       →    D12 (shared with TFT)
+MOSI       →    D51 (shared with TFT)
+SCK        →    D52 (shared with TFT)
+MISO       →    D50 (shared with TFT)
+```
+
+### RTC Module Connections (I2C)
+```
+RTC Pin    →    Mega 2560 Pin
+--------------------------------
+VCC        →    5V
+GND        →    GND
+SDA        →    D20 (I2C data - NOT A4!)
+SCL        →    D21 (I2C clock - NOT A5!)
 ```
 
 ### Hall Sensor Connection
 ```
-Hall Sensor Pin  →  Arduino Pin
+Hall Sensor Pin  →  Mega 2560 Pin
 --------------------------------
-VCC              →  5V
-GND              →  GND
-OUT/Signal       →  D5 (with internal pull-up)
+VCC (Red)        →  5V
+GND (Green)      →  GND
+Signal (Yellow)  →  D5 (with internal pull-up)
 ```
 
 ### Buttons
 ```
-Component           →  Arduino Pin
+Component           →  Mega 2560 Pin
 --------------------------------
 Daily Reset Button  →  D6 (with internal pull-up)
-Trip Reset Button   →  D7 (with internal pull-up)
+All Reset Button    →  D7 (with internal pull-up)
 
-Button Wiring: Connect one side to GND, other side to Arduino pin
+Button Wiring: Connect one side to GND, other side to Mega pin
 (Internal pull-ups are enabled in code)
+```
+
+### Brightness Control
+```
+Potentiometer Pin  →  Mega 2560 Pin
+--------------------------------
+Pin 1 (outer)      →  GND
+Pin 2 (wiper)      →  A0
+Pin 3 (outer)      →  5V
 ```
 
 ## Installation

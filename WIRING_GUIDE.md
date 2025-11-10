@@ -1,7 +1,7 @@
-# Cat Wheel Speedometer - Detailed Wiring Guide
+# Cat Wheel Speedometer - Wiring Guide for Arduino Mega 2560
 
 ## Overview
-This guide provides step-by-step wiring instructions for connecting all components to your Arduino.
+This guide provides step-by-step wiring instructions for connecting all components to your Arduino Mega 2560.
 
 ## Safety First
 - ⚡ Disconnect power before making connections
@@ -9,22 +9,24 @@ This guide provides step-by-step wiring instructions for connecting all componen
 - 🔍 Never connect 3.3V components to 5V pins (this display is 5V tolerant)
 - 🔥 Avoid short circuits - keep VCC and GND separate
 
-## Pin Assignment Summary
+## Pin Assignment Summary (Arduino Mega 2560)
 
-| Component | Pin Type | Arduino Pin | Notes |
-|-----------|----------|-------------|-------|
+| Component | Pin Type | Mega 2560 Pin | Notes |
+|-----------|----------|---------------|-------|
 | TFT CS | Digital Output | D10 | Chip Select for display |
 | TFT DC | Digital Output | D9 | Data/Command select |
 | TFT RST | Digital Output | D8 | Reset |
-| TFT MOSI | SPI | D11 | Hardware SPI (can't change) |
-| TFT SCK | SPI | D13 | Hardware SPI (can't change) |
-| TFT MISO | SPI | D12 | Hardware SPI (can't change) |
+| TFT LED | PWM Output | D3 | Backlight control |
+| TFT MOSI | SPI | D51 | Hardware SPI (can't change) |
+| TFT SCK | SPI | D52 | Hardware SPI (can't change) |
+| TFT MISO | SPI | D50 | Hardware SPI (can't change) |
 | SD CS | Digital Output | D4 | SD Card Chip Select |
-| RTC SDA | I2C | A4 (Uno) / D20 (Mega) | I2C Data (can't change) |
-| RTC SCL | I2C | A5 (Uno) / D21 (Mega) | I2C Clock (can't change) |
+| RTC SDA | I2C | D20 | I2C Data (can't change) |
+| RTC SCL | I2C | D21 | I2C Clock (can't change) |
 | Hall Sensor | Digital Input | D5 | With internal pullup |
 | Today Reset | Digital Input | D6 | Button with internal pullup |
 | All Reset | Digital Input | D7 | Button with internal pullup |
+| Brightness Pot | Analog Input | A0 | 10k potentiometer |
 
 ## Step-by-Step Wiring
 
@@ -33,43 +35,43 @@ This guide provides step-by-step wiring instructions for connecting all componen
 The 3.2" TFT display typically has pins along one edge. Pin labels may be on the back.
 
 ```
-TFT Display Pin Connections:
-============================
+TFT Display Pin Connections (Arduino Mega 2560):
+================================================
 
-TFT Pin    Wire Color*   Arduino Pin   Notes
---------   -----------   -----------   -----
-VCC        Red           5V            Power (5V rail)
-GND        Black         GND           Ground
-CS         Orange        D10           Chip Select
-RESET      Yellow        D8            Reset pin
-DC/RS      Green         D9            Data/Command
-MOSI       Blue          D11           Master Out Slave In (SPI)
-SCK        Purple        D13           Serial Clock (SPI)
-LED        Red           5V or 3.3V    Backlight (may need resistor)
-MISO       Gray          D12           Master In Slave Out (SPI)
+TFT Pin    Wire Color*   Mega 2560 Pin   Notes
+--------   -----------   -------------   -----
+VCC        Red           5V              Power (5V rail)
+GND        Black         GND             Ground
+CS         Orange        D10             Chip Select
+RESET      Yellow        D8              Reset pin
+DC/RS      Green         D9              Data/Command
+MOSI/SDI   Blue          D51             Master Out Slave In (SPI)
+SCK/CLK    Purple        D52             Serial Clock (SPI)
+LED        (via pot)     D3              Backlight - see brightness section
+MISO/SDO   Gray          D50             Master In Slave Out (SPI)
 
 *Wire colors are suggestions for easy identification
 ```
 
 **Important Notes:**
 - Some displays have additional pins (3.3V, NC) - leave these unconnected
-- LED pin: Connect to 5V for full brightness, or 3.3V for dimmer (saves power)
-- Some displays have built-in LED resistor; if yours doesn't, add a 100Ω resistor between 5V and LED pin
+- LED pin: Connected through brightness control circuit (see Step 7)
 - If display has a touch function (T_* pins), you can leave these unconnected
+- CRITICAL: Mega 2560 uses different SPI pins than Uno/Nano (51/52/50 not 11/13/12)
 
 **Breadboard Layout for TFT:**
 ```
-Arduino Uno                TFT Display
+Arduino Mega 2560          TFT Display
                           ┌─────────┐
     5V  ────────────────► │ VCC     │
    GND  ────────────────► │ GND     │
    D10  ────────────────► │ CS      │
     D8  ────────────────► │ RESET   │
     D9  ────────────────► │ DC      │
-   D11  ────────────────► │ MOSI    │
-   D13  ────────────────► │ SCK     │
-    5V  ────────────────► │ LED     │
-   D12  ◄────────────────┤ MISO    │
+   D51  ────────────────► │ MOSI    │
+   D52  ────────────────► │ SCK     │
+    D3  ────────────────► │ LED     │ (via brightness circuit)
+   D50  ◄────────────────┤ MISO    │
                           └─────────┘
 ```
 
@@ -78,25 +80,22 @@ Arduino Uno                TFT Display
 The DS3231 or DS1307 RTC module keeps track of time, even when power is disconnected (thanks to backup battery).
 
 ```
-RTC Module Pin Connections:
-===========================
+RTC Module Pin Connections (Arduino Mega 2560):
+==============================================
 
-RTC Pin    Wire Color*   Arduino Uno   Arduino Mega   Notes
---------   -----------   -----------   ------------   -----
-VCC        Red           5V            5V             Power
-GND        Black         GND           GND            Ground
-SDA        Blue          A4            D20            I2C Data
-SCL        Yellow        A5            D21            I2C Clock
+RTC Pin    Wire Color*   Mega 2560 Pin   Notes
+--------   -----------   -------------   -----
+VCC        Red           5V              Power
+GND        Black         GND             Ground
+SDA        Blue          D20             I2C Data
+SCL        Yellow        D21             I2C Clock
 
 *Wire colors are suggestions for easy identification
 ```
 
 **Important Notes:**
 - RTC uses I2C communication (2-wire)
-- SDA/SCL pins are **hardware-specific** and cannot be changed:
-  - **Arduino Uno**: SDA = A4, SCL = A5
-  - **Arduino Mega**: SDA = D20, SCL = D21
-  - **Arduino Nano**: SDA = A4, SCL = A5
+- On Mega 2560, SDA = D20, SCL = D21 (hardware-specific, cannot be changed)
 - Most RTC modules include pull-up resistors (no external resistors needed)
 - CR2032 battery should be installed on RTC module for time backup
 - Some modules have an additional SQW (Square Wave) pin - leave it unconnected
@@ -115,14 +114,14 @@ DS3231/DS1307 Module
 Most 3.2" TFT displays have an SD card slot on the back. These share the SPI bus with the display.
 
 ```
-SD Card Pin (on TFT back)   Arduino Pin   Notes
--------------------------   -----------   -----
-SD_CS                       D4            Separate chip select
-SD_MOSI                     D11           Shared with TFT
-SD_SCK                      D13           Shared with TFT
-SD_MISO                     D12           Shared with TFT
-(VCC)                       5V            Usually shared with TFT VCC
-(GND)                       GND           Usually shared with TFT GND
+SD Card Pin (on TFT back)   Mega 2560 Pin   Notes
+-------------------------   -------------   -----
+SD_CS                       D4              Separate chip select
+SD_MOSI                     D51             Shared with TFT
+SD_SCK                      D52             Shared with TFT
+SD_MISO                     D50             Shared with TFT
+(VCC)                       5V              Usually shared with TFT VCC
+(GND)                       GND             Usually shared with TFT GND
 ```
 
 **Important:**
@@ -133,11 +132,11 @@ SD_MISO                     D12           Shared with TFT
 
 **If SD pins are separate (not common):**
 ```
-Arduino    SD Card Slot
+Mega 2560    SD Card Slot
   D4  ──────► CS
-  D11 ──────► MOSI
-  D13 ──────► SCK
-  D12 ◄────── MISO
+  D51 ──────► MOSI
+  D52 ──────► SCK
+  D50 ◄────── MISO
   5V  ──────► VCC
   GND ──────► GND
 ```
@@ -254,7 +253,47 @@ Many tactile switches have 4 pins (2 pairs). Pins are connected in pairs:
     3 ──── 4
 ```
 
-### Step 6: Power Supply
+### Step 6: Brightness Control (10k Potentiometer)
+
+The 10k potentiometer allows you to adjust the LCD backlight brightness.
+
+```
+10k Potentiometer Connections:
+==============================
+
+Pot Pin      Mega 2560 Pin   Notes
+--------     -------------   -----
+Pin 1        GND             Ground (one outer pin)
+Pin 2        A0              Wiper/middle pin (analog input)
+Pin 3        5V              Power (other outer pin)
+
+Note: Pins 1 and 3 are interchangeable (swapping reverses rotation direction)
+```
+
+**LED (Backlight) Connection:**
+```
+Display LED Pin ──► Mega D3 (PWM)
+```
+
+**How It Works:**
+- Potentiometer creates variable voltage on A0 (0V to 5V)
+- Arduino reads voltage and converts to brightness value (0-255)
+- PWM on D3 controls LED brightness
+- Minimum brightness set to 20/255 so display never goes completely dark
+
+**Breadboard Layout:**
+```
+Mega 2560         Potentiometer        Display
+                  ┌─────────┐
+  5V  ────────────┤ 3  2  1 ├──────────► GND
+                  │    │    │
+  A0  ◄───────────┤    │    │
+                  └────┴────┘
+
+  D3  ─────────────────────────────────► LED pin
+```
+
+### Step 7: Power Supply
 
 **Option A: USB Power (Easiest for Testing)**
 ```
@@ -293,7 +332,7 @@ Cons: Batteries need replacement/recharging
 Runtime: ~8-12 hours with 9V, longer with AA
 ```
 
-### Step 7: Power Distribution on Breadboard
+### Step 8: Power Distribution on Breadboard
 
 **Breadboard Power Rails:**
 ```
@@ -313,77 +352,54 @@ Arduino GND Pin ─────┬──► Breadboard - (Blue/Black) Rail
                      └──► Button 2 (other side)
 ```
 
-## Complete Wiring Diagram
+## Complete Wiring Summary (Arduino Mega 2560)
 
 ```
-                                    Arduino Uno
-                                 ┌────────────┐
-    ┌────────────────────────────┤ VIN        │
-    │  ┌─────────────────────────┤ GND        │
-    │  │  ┌──────────────────────┤ 5V         │
-    │  │  │                      │            │
-    │  │  │    ┌─────────────────┤ D13 (SCK)  │
-    │  │  │    │    ┌────────────┤ D12 (MISO) │
-    │  │  │    │    │  ┌─────────┤ D11 (MOSI) │
-    │  │  │    │    │  │    ┌────┤ D10        │
-    │  │  │    │    │  │    │ ┌──┤ D9         │
-    │  │  │    │    │  │    │ │ ┌┤ D8         │
-    │  │  │    │    │  │    │ │ ││            │
-    │  │  │    │    │  │    │ │ ││       ┌────┤ D7         │
-    │  │  │    │    │  │    │ │ ││       │ ┌──┤ D6         │
-    │  │  │    │    │  │    │ │ ││       │ │ ┌┤ D5         │
-    │  │  │    │    │  │    │ │ ││       │ │ ││       ┌────┤ D4         │
-    │  │  │    │    │  │    │ │ ││       │ │ ││       │    └────────────┘
-    │  │  │    │    │  │    │ │ ││       │ │ ││       │
-    │  │  │    │    │  │    │ │ ││       │ │ │└──┐    │
-    │  │  │    │    │  │    │ │ ││       │ │ │   │    │
-    │  │  │    │    │  │    │ │ ││       │ │ │   │    │    3.2" TFT Display
-    │  │  │    │    │  │    │ │ ││       │ │ │   │    │    ┌──────────┐
-    │  │  └────┼────┼──┼────┼─┼─┼┼───────┼─┼─┼───┼────┼────┤ VCC      │
-    │  └───────┼────┼──┼────┼─┼─┼┼───────┼─┼─┼───┼────┼────┤ GND      │
-    │          │    │  │    └─┼─┼┼───────┼─┼─┼───┼────┼────┤ CS       │
-    │          │    │  │      │ │└───────┼─┼─┼───┼────┼────┤ RESET    │
-    │          │    │  │      │ └────────┼─┼─┼───┼────┼────┤ DC       │
-    │          │    │  └──────┼──────────┼─┼─┼───┼────┼────┤ MOSI     │
-    │          │    └─────────┼──────────┼─┼─┼───┼────┼────┤ SCK      │
-    │          │              │          │ │ │   │    ├────┤ LED      │
-    │          └──────────────┼──────────┼─┼─┼───┼────┼────┤ MISO     │
-    │                         │          │ │ │   │    └──────────────┘
-    │                         │          │ │ │   │
-    │                         │          │ │ │   │    SD Card (on TFT)
-    │                         │          │ │ │   │    ┌──────────┐
-    │                         │          │ │ │   └────┤ CS       │
-    │                         │          │ │ │        └──────────┘
-    │                         │          │ │ │        (MOSI,MISO,SCK shared)
-    │                         │          │ │ │
-    │                         │          │ │ │        Hall Sensor A3144
-    │                         │          │ │ │        ┌──────────┐
-    │                         └──────────┼─┼─┼────────┤ VCC (1)  │
-    │                                    │ │ └────────┤ GND (2)  │
-    │                                    │ └──────────┤ OUT (3)  │
-    │                                    │            └──────────┘
-    │                                    │
-    │                                    │            Daily Reset Button
-    │                                    │            ┌──────────┐
-    │                                    └────────────┤   o  o   │
-    │                                                 └──┬───────┘
-    └────────────────────────────────────────────────────┘
+MEGA 2560 PIN CONNECTIONS
+=========================
 
-                                                         Trip Reset Button
-                                                         ┌──────────┐
-                                                         │   o  o   │
-                                                         └──┬───────┘
-                                                            │
-                                                    ────────┘
-                                                    (to GND)
+Power:
+  5V  ──► TFT VCC, RTC VCC, Hall Sensor VCC, Potentiometer Pin 3
+  GND ──► TFT GND, RTC GND, Hall Sensor GND, SD GND, Button 1, Button 2, Pot Pin 1
+
+SPI Bus (shared by TFT and SD Card):
+  D51 (MOSI) ──► TFT MOSI/SDI, SD MOSI
+  D52 (SCK)  ──► TFT SCK/CLK, SD SCK
+  D50 (MISO) ──► TFT MISO/SDO, SD MISO
+
+TFT Display:
+  D10 ──► TFT CS (chip select)
+  D9  ──► TFT DC (data/command)
+  D8  ──► TFT RESET
+  D3  ──► TFT LED (backlight, PWM)
+
+SD Card:
+  D4  ──► SD CS (chip select)
+
+RTC Module (I2C):
+  D20 ──► RTC SDA (I2C data)
+  D21 ──► RTC SCL (I2C clock)
+
+Hall Sensor:
+  D5  ──► Hall Sensor OUT (signal pin)
+
+Buttons:
+  D6  ──► Today Reset Button (other leg to GND)
+  D7  ──► All Reset Button (other leg to GND)
+
+Brightness Control:
+  A0  ──► Potentiometer wiper (middle pin)
 ```
 
-## Verification Checklist
+## Verification Checklist (MEGA 2560 SPECIFIC)
 
 Before powering on, verify:
 
-- [ ] All SPI connections (MOSI, MISO, SCK) go to correct pins
+- [ ] SPI pins correct for Mega: MOSI=51, SCK=52, MISO=50 (NOT 11/13/12!)
+- [ ] I2C pins correct for Mega: SDA=20, SCL=21 (NOT A4/A5!)
 - [ ] TFT_CS (D10) and SD_CS (D4) are different pins
+- [ ] TFT LED connects to D3 (PWM pin)
+- [ ] Potentiometer wiper (middle pin) to A0
 - [ ] Hall sensor VCC goes to 5V, not GND (polarity correct)
 - [ ] All grounds connected together (common ground)
 - [ ] No shorts between VCC and GND
