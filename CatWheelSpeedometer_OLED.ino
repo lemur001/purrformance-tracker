@@ -333,12 +333,12 @@ void updateDisplay() {
   display.setCursor(110, 8);
   display.print(F("MPH"));
 
-  // Line 2: Distance (" 0.0 mi" right-aligned to pixel 127)
+  // Line 2: Distance (" 0.00 mi" right-aligned to pixel 127)
   display.setCursor(0, 16);
   display.print(F("Distance:"));
-  char todayStr[5];
-  dtostrf(todayDistance, 4, 1, todayStr);
-  display.setCursor(86, 16);
+  char todayStr[6];
+  dtostrf(todayDistance, 5, 2, todayStr);
+  display.setCursor(80, 16);
   display.print(todayStr);
   display.setCursor(116, 16);
   display.print(F("mi"));
@@ -360,9 +360,9 @@ void updateDisplay() {
   // Line 5: Total Distance (aligned with Distance above)
   display.setCursor(0, 40);
   display.print(F("Total Dist:"));
-  char totalStr[5];
-  dtostrf(lifetimeTotalMiles, 4, 1, totalStr);
-  display.setCursor(86, 40);
+  char totalStr[6];
+  dtostrf(lifetimeTotalMiles, 5, 2, totalStr);
+  display.setCursor(80, 40);
   display.print(totalStr);
   display.setCursor(116, 40);
   display.print(F("mi"));
@@ -370,9 +370,9 @@ void updateDisplay() {
   // Line 6: Daytime (aligned with distances above)
   display.setCursor(0, 48);
   display.print(F("Daytime:"));
-  char dayStr[5];
-  dtostrf(dayMiles, 4, 1, dayStr);
-  display.setCursor(86, 48);
+  char dayStr[6];
+  dtostrf(dayMiles, 5, 2, dayStr);
+  display.setCursor(80, 48);
   display.print(dayStr);
   display.setCursor(116, 48);
   display.print(F("mi"));
@@ -380,9 +380,9 @@ void updateDisplay() {
   // Line 7: Nighttime (aligned with distances above)
   display.setCursor(0, 56);
   display.print(F("Nighttime:"));
-  char nightStr[5];
-  dtostrf(nightMiles, 4, 1, nightStr);
-  display.setCursor(86, 56);
+  char nightStr[6];
+  dtostrf(nightMiles, 5, 2, nightStr);
+  display.setCursor(80, 56);
   display.print(nightStr);
   display.setCursor(116, 56);
   display.print(F("mi"));
