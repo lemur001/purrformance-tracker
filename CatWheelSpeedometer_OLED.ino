@@ -9,9 +9,9 @@
  * - Arduino Mega 2560
  *
  * Wheel Specifications:
- * - Diameter: 118 inches
- * - Circumference: 370.7 inches
- * - Distance per magnet: 30.89 inches
+ * - Circumference: 118 inches
+ * - Diameter: 37.6 inches (118 / π)
+ * - Distance per magnet: 9.83 inches
  */
 
 #include <Wire.h>
@@ -37,8 +37,8 @@ const float LATITUDE = 41.8781;
 const float LONGITUDE = -87.6298;
 
 // ==================== CONSTANTS ====================
-const float WHEEL_DIAMETER = 118.0;
-const float WHEEL_CIRCUMFERENCE = 3.14159265359 * WHEEL_DIAMETER;
+const float WHEEL_CIRCUMFERENCE = 118.0;
+const float WHEEL_DIAMETER = WHEEL_CIRCUMFERENCE / 3.14159265359;
 const int MAGNET_COUNT = 12;
 const float DISTANCE_PER_MAGNET = WHEEL_CIRCUMFERENCE / MAGNET_COUNT;
 const float INCHES_PER_MILE = 63360.0;
