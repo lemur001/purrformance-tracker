@@ -315,7 +315,7 @@ void updateDisplay() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  // Line 0-1: Speed (large, two lines on left)
+  // Line 0: Speed
   display.setCursor(0, 0);
   display.print(F("Speed:"));
   char speedStr[7];
@@ -324,13 +324,12 @@ void updateDisplay() {
   display.print(speedStr);
   display.print(F("MPH"));
 
-  // Line 1: Peak Speed (right side, line 1)
-  display.setCursor(66, 8);
-  display.print(F("Peak:"));
+  // Line 1: Peak Speed (aligned with Top Speed MPH below)
   char peakStr[6];
-  dtostrf(peakSpeed, 4, 1, peakStr);
-  display.setCursor(98, 8);
+  dtostrf(peakSpeed, 5, 1, peakStr);
+  display.setCursor(63, 8);
   display.print(peakStr);
+  display.print(F("MPH"));
 
   // Line 2: Distance
   display.setCursor(0, 16);
