@@ -322,16 +322,14 @@ void updateDisplay() {
   dtostrf(currentSpeed, 5, 1, speedStr);
   display.setCursor(42, 0);
   display.print(speedStr);
-
-  display.setCursor(0, 8);
   display.print(F("MPH"));
 
-  // Line 1: Peak Speed (right side, below speed number)
+  // Line 1: Peak Speed (right side, line 1)
   display.setCursor(66, 8);
   display.print(F("Peak:"));
   char peakStr[6];
   dtostrf(peakSpeed, 4, 1, peakStr);
-  display.setCursor(97, 8);
+  display.setCursor(98, 8);
   display.print(peakStr);
 
   // Line 2: Distance
@@ -352,7 +350,7 @@ void updateDisplay() {
   display.print(F("Top Speed:"));
   char topStr[6];
   dtostrf(lifetimeTopSpeed, 5, 1, topStr);
-  display.setCursor(62, 32);
+  display.setCursor(63, 32);
   display.print(topStr);
   display.print(F("MPH"));
 
