@@ -45,8 +45,9 @@ const float INCHES_PER_MILE = 63360.0;
 
 // Timing and Validation
 const unsigned long SPEED_TIMEOUT = 4000;          // 4 sec timeout
-const unsigned long MIN_MAGNET_INTERVAL = 45;      // 45ms debounce
+const unsigned long MIN_MAGNET_INTERVAL = 16;      // 16ms debounce (allows 35 MPH)
 const float MAX_CAT_SPEED = 35.0;                  // 35 MPH max
+const float MAX_ACCELERATION = 25.0;               // Max 25 MPH increase per reading
 const unsigned long RESET_HOLD_TIME = 3000;        // 3 sec hold to reset
 const unsigned long PEAK_HOLD_TIME = 30000;        // 30 sec peak speed hold
 
@@ -171,24 +172,32 @@ void handleMagnetDetection() {
     unsigned long timeDiff = currentTime - lastValidMagnetTime;
     float calculatedSpeed = (DISTANCE_PER_MAGNET / timeDiff) * 3600000.0 / INCHES_PER_MILE;
 
-    if (calculatedSpeed <= MAX_CAT_SPEED) {
-      currentSpeed = calculatedSpeed;
-      lastValidMagnetTime = currentTime;
-
-      // Update peak speed if current is higher
-      if (currentSpeed > peakSpeed) {
-        peakSpeed = currentSpeed;
-        peakSpeedTime = currentTime;
-      }
-
-      if (currentSpeed > lifetimeTopSpeed) {
-        lifetimeTopSpeed = currentSpeed;
-      }
-
-      updateDisplay();
-    } else {
-      return;
+    // Check max speed limit
+    if (calculatedSpeed > MAX_CAT_SPEED) {
+      return; // Reject reading
     }
+
+    // Check acceleration limit (prevents sensor bounce)
+    float acceleration = calculatedSpeed - currentSpeed;
+    if (acceleration > MAX_ACCELERATION) {
+      return; // Reject reading - too much acceleration (likely sensor bounce)
+    }
+
+    // Valid reading - update speed
+    currentSpeed = calculatedSpeed;
+    lastValidMagnetTime = currentTime;
+
+    // Update peak speed if current is higher
+    if (currentSpeed > peakSpeed) {
+      peakSpeed = currentSpeed;
+      peakSpeedTime = currentTime;
+    }
+
+    if (currentSpeed > lifetimeTopSpeed) {
+      lifetimeTopSpeed = currentSpeed;
+    }
+
+    updateDisplay();
   } else {
     lastValidMagnetTime = currentTime;
   }
