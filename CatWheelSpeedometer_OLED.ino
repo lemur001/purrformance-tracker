@@ -329,7 +329,7 @@ void updateDisplay() {
   display.print(F("Top Speed:"));
   char topStr[7];
   dtostrf(lifetimeTopSpeed, 6, 1, topStr);
-  display.setCursor(74, 32);
+  display.setCursor(68, 32);  // Same as Speed line (both end in MPH)
   display.print(topStr);
   display.print(F(" MPH"));
 
