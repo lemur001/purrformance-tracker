@@ -48,6 +48,7 @@ const unsigned long SPEED_TIMEOUT = 4000;          // 4 sec timeout
 const unsigned long MIN_MAGNET_INTERVAL = 45;      // 45ms debounce
 const float MAX_CAT_SPEED = 35.0;                  // 35 MPH max
 const unsigned long RESET_HOLD_TIME = 3000;        // 3 sec hold to reset
+const unsigned long PEAK_HOLD_TIME = 30000;        // 30 sec peak speed hold
 
 // ==================== GLOBAL VARIABLES ====================
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -57,6 +58,8 @@ RTC_DS3231 rtc;
 unsigned long lastMagnetTime = 0;
 unsigned long lastValidMagnetTime = 0;
 float currentSpeed = 0.0;
+float peakSpeed = 0.0;                  // Peak speed (holds for 30 sec)
+unsigned long peakSpeedTime = 0;        // When peak was set
 int magnetCounter = 0;
 
 // Stats (stored in RAM only - no SD card)
@@ -106,7 +109,8 @@ void setup() {
   }
 
   if (rtc.lostPower()) {
-    rtc.adjust(DateTime(2024, 11, 10, 12, 0, 0));
+    // Set to November 10, 2025 at 12:20 AM
+    rtc.adjust(DateTime(2025, 11, 10, 0, 20, 0));
   }
 
   // Get current day for tracking
@@ -140,6 +144,12 @@ void loop() {
     updateDisplay();
   }
 
+  // Check for peak speed timeout (30 seconds)
+  if (millis() - peakSpeedTime > PEAK_HOLD_TIME && peakSpeed != 0.0) {
+    peakSpeed = 0.0;
+    updateDisplay();
+  }
+
   // Check reset button (hold 3 seconds)
   handleResetButton();
 
@@ -164,6 +174,12 @@ void handleMagnetDetection() {
     if (calculatedSpeed <= MAX_CAT_SPEED) {
       currentSpeed = calculatedSpeed;
       lastValidMagnetTime = currentTime;
+
+      // Update peak speed if current is higher
+      if (currentSpeed > peakSpeed) {
+        peakSpeed = currentSpeed;
+        peakSpeedTime = currentTime;
+      }
 
       if (currentSpeed > lifetimeTopSpeed) {
         lifetimeTopSpeed = currentSpeed;
@@ -253,6 +269,7 @@ void resetAllStats() {
   dayMiles = 0.0;
   nightMiles = 0.0;
   todayDistance = 0.0;
+  peakSpeed = 0.0;
   magnetCounter = 0;
 }
 
@@ -296,69 +313,79 @@ float calculateSunset(int dayOfYear) {
 void updateDisplay() {
   display.clearDisplay();
   display.setTextSize(1);
+
+  // Line 0: "-----------DAILY-----------" (centered)
   display.setTextColor(SSD1306_WHITE);
-
-  // Line 0: "----------DAILY-----------" (centered)
   display.setCursor(0, 0);
-  display.println(F("----------DAILY----------"));
+  display.println(F("-----------DAILY-----------"));
 
-  // Line 1: Speed - left label, right-aligned value
+  // Line 1: Speed - left label, right-aligned value (YELLOW)
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 8);
   display.print(F("Speed:"));
-  char speedStr[9];
-  dtostrf(currentSpeed, 7, 1, speedStr);  // Right-pad to 7 chars (xxx.x)
-  display.setCursor(68, 8);  // Position for right-aligned values
+  char speedStr[8];
+  dtostrf(currentSpeed, 5, 1, speedStr);
+  display.setCursor(62, 8);
   display.print(speedStr);
-  display.print(F(" MPH"));
+  display.print(F("MPH"));
 
-  // Line 2: Distance - left label, right-aligned value
+  // Line 2: Peak Speed - right side (YELLOW)
+  display.setCursor(66, 16);
+  display.print(F("Peak:"));
+  char peakStr[6];
+  dtostrf(peakSpeed, 4, 1, peakStr);
+  display.setCursor(97, 16);
+  display.print(peakStr);
+
+  // Line 3: Distance - left label, right-aligned value (YELLOW)
   display.setCursor(0, 16);
   display.print(F("Distance:"));
-  char todayStr[7];
-  dtostrf(todayDistance, 6, 1, todayStr);  // Right-pad to 6 chars (xxx.x)
-  display.setCursor(74, 16);
+  char todayStr[6];
+  dtostrf(todayDistance, 5, 1, todayStr);
+  display.setCursor(80, 16);
   display.print(todayStr);
-  display.print(F(" mi"));
+  display.print(F("mi"));
 
-  // Line 3: "-----HIGH SCORES-----" (centered)
+  // Line 4: "-----HIGH SCORES-----" (centered)
+  display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 24);
   display.println(F("-----HIGH SCORES-----"));
 
-  // Line 4: Top Speed - left label, right-aligned value
+  // Line 5: Top Speed - left label, right-aligned value
   display.setCursor(0, 32);
   display.print(F("Top Speed:"));
-  char topStr[7];
-  dtostrf(lifetimeTopSpeed, 6, 1, topStr);
-  display.setCursor(68, 32);  // Same as Speed line (both end in MPH)
+  char topStr[6];
+  dtostrf(lifetimeTopSpeed, 5, 1, topStr);
+  display.setCursor(62, 32);
   display.print(topStr);
-  display.print(F(" MPH"));
+  display.print(F("MPH"));
 
-  // Line 5: Total Distance - left label, right-aligned value
+  // Line 6: Total Distance - left label, right-aligned value
   display.setCursor(0, 40);
   display.print(F("Total Dist:"));
-  char totalStr[7];
-  dtostrf(lifetimeTotalMiles, 6, 1, totalStr);
-  display.setCursor(68, 40);
+  char totalStr[6];
+  dtostrf(lifetimeTotalMiles, 5, 1, totalStr);
+  display.setCursor(74, 40);
   display.print(totalStr);
-  display.print(F(" mi"));
+  display.print(F("mi"));
 
-  // Line 6: Daytime - left label, right-aligned value
+  // Line 7: Daytime - left label, right-aligned value
   display.setCursor(0, 48);
   display.print(F("Daytime:"));
-  char dayStr[7];
-  dtostrf(dayMiles, 6, 1, dayStr);
-  display.setCursor(68, 48);
+  char dayStr[6];
+  dtostrf(dayMiles, 5, 1, dayStr);
+  display.setCursor(74, 48);
   display.print(dayStr);
-  display.print(F(" mi"));
+  display.print(F("mi"));
 
-  // Line 7: Nighttime - left label, right-aligned value
+  // Line 8: Nighttime - left label, right-aligned value
   display.setCursor(0, 56);
   display.print(F("Nighttime:"));
-  char nightStr[7];
-  dtostrf(nightMiles, 6, 1, nightStr);
-  display.setCursor(68, 56);
+  char nightStr[6];
+  dtostrf(nightMiles, 5, 1, nightStr);
+  display.setCursor(74, 56);
   display.print(nightStr);
-  display.print(F(" mi"));
+  display.print(F("mi"));
 
   display.display();
 }
