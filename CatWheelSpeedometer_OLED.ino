@@ -315,69 +315,76 @@ void updateDisplay() {
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
 
-  // Line 0: Speed
+  // Line 0: Speed (H aligns with i at right edge)
   display.setCursor(0, 0);
   display.print(F("Speed:"));
-  char speedStr[7];
+  char speedStr[6];
   dtostrf(currentSpeed, 5, 1, speedStr);
-  display.setCursor(42, 0);
+  display.setCursor(80, 0);
   display.print(speedStr);
+  display.setCursor(110, 0);
   display.print(F("MPH"));
 
-  // Line 1: Peak Speed (aligned with Top Speed MPH below)
+  // Line 1: Peak Speed (aligned with Top Speed)
   char peakStr[6];
   dtostrf(peakSpeed, 5, 1, peakStr);
-  display.setCursor(63, 8);
+  display.setCursor(80, 8);
   display.print(peakStr);
+  display.setCursor(110, 8);
   display.print(F("MPH"));
 
-  // Line 2: Distance
+  // Line 2: Distance (i aligns with H above)
   display.setCursor(0, 16);
   display.print(F("Distance:"));
-  char todayStr[6];
-  dtostrf(todayDistance, 5, 1, todayStr);
-  display.setCursor(74, 16);
+  char todayStr[5];
+  dtostrf(todayDistance, 4, 1, todayStr);
+  display.setCursor(92, 16);
   display.print(todayStr);
+  display.setCursor(116, 16);
   display.print(F("mi"));
 
   // Line 3: "-----HIGH SCORES-----"
   display.setCursor(0, 24);
   display.println(F("-----HIGH SCORES-----"));
 
-  // Line 4: Top Speed
+  // Line 4: Top Speed (aligned with peak above)
   display.setCursor(0, 32);
   display.print(F("Top Speed:"));
   char topStr[6];
   dtostrf(lifetimeTopSpeed, 5, 1, topStr);
-  display.setCursor(63, 32);
+  display.setCursor(80, 32);
   display.print(topStr);
+  display.setCursor(110, 32);
   display.print(F("MPH"));
 
-  // Line 5: Total Distance
+  // Line 5: Total Distance (aligned with distance above)
   display.setCursor(0, 40);
   display.print(F("Total Dist:"));
-  char totalStr[6];
-  dtostrf(lifetimeTotalMiles, 5, 1, totalStr);
-  display.setCursor(74, 40);
+  char totalStr[5];
+  dtostrf(lifetimeTotalMiles, 4, 1, totalStr);
+  display.setCursor(92, 40);
   display.print(totalStr);
+  display.setCursor(116, 40);
   display.print(F("mi"));
 
-  // Line 6: Daytime
+  // Line 6: Daytime (aligned)
   display.setCursor(0, 48);
   display.print(F("Daytime:"));
-  char dayStr[6];
-  dtostrf(dayMiles, 5, 1, dayStr);
-  display.setCursor(74, 48);
+  char dayStr[5];
+  dtostrf(dayMiles, 4, 1, dayStr);
+  display.setCursor(92, 48);
   display.print(dayStr);
+  display.setCursor(116, 48);
   display.print(F("mi"));
 
-  // Line 7: Nighttime
+  // Line 7: Nighttime (aligned)
   display.setCursor(0, 56);
   display.print(F("Nighttime:"));
-  char nightStr[6];
-  dtostrf(nightMiles, 5, 1, nightStr);
-  display.setCursor(74, 56);
+  char nightStr[5];
+  dtostrf(nightMiles, 4, 1, nightStr);
+  display.setCursor(92, 56);
   display.print(nightStr);
+  display.setCursor(116, 56);
   display.print(F("mi"));
 
   display.display();
