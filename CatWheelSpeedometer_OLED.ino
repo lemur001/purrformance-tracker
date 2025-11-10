@@ -313,45 +313,41 @@ float calculateSunset(int dayOfYear) {
 void updateDisplay() {
   display.clearDisplay();
   display.setTextSize(1);
-
-  // Line 0: "-----------DAILY-----------" (centered)
   display.setTextColor(SSD1306_WHITE);
+
+  // Line 0-1: Speed (large, two lines on left)
   display.setCursor(0, 0);
-  display.println(F("-----------DAILY-----------"));
-
-  // Line 1: Speed - left label, right-aligned value (YELLOW)
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(0, 8);
   display.print(F("Speed:"));
-  char speedStr[8];
+  char speedStr[7];
   dtostrf(currentSpeed, 5, 1, speedStr);
-  display.setCursor(62, 8);
+  display.setCursor(42, 0);
   display.print(speedStr);
+
+  display.setCursor(0, 8);
   display.print(F("MPH"));
 
-  // Line 2: Peak Speed - right side (YELLOW)
-  display.setCursor(66, 16);
+  // Line 1: Peak Speed (right side, below speed number)
+  display.setCursor(66, 8);
   display.print(F("Peak:"));
   char peakStr[6];
   dtostrf(peakSpeed, 4, 1, peakStr);
-  display.setCursor(97, 16);
+  display.setCursor(97, 8);
   display.print(peakStr);
 
-  // Line 3: Distance - left label, right-aligned value (YELLOW)
+  // Line 2: Distance
   display.setCursor(0, 16);
   display.print(F("Distance:"));
   char todayStr[6];
   dtostrf(todayDistance, 5, 1, todayStr);
-  display.setCursor(80, 16);
+  display.setCursor(74, 16);
   display.print(todayStr);
   display.print(F("mi"));
 
-  // Line 4: "-----HIGH SCORES-----" (centered)
-  display.setTextColor(SSD1306_WHITE);
+  // Line 3: "-----HIGH SCORES-----"
   display.setCursor(0, 24);
   display.println(F("-----HIGH SCORES-----"));
 
-  // Line 5: Top Speed - left label, right-aligned value
+  // Line 4: Top Speed
   display.setCursor(0, 32);
   display.print(F("Top Speed:"));
   char topStr[6];
@@ -360,7 +356,7 @@ void updateDisplay() {
   display.print(topStr);
   display.print(F("MPH"));
 
-  // Line 6: Total Distance - left label, right-aligned value
+  // Line 5: Total Distance
   display.setCursor(0, 40);
   display.print(F("Total Dist:"));
   char totalStr[6];
@@ -369,7 +365,7 @@ void updateDisplay() {
   display.print(totalStr);
   display.print(F("mi"));
 
-  // Line 7: Daytime - left label, right-aligned value
+  // Line 6: Daytime
   display.setCursor(0, 48);
   display.print(F("Daytime:"));
   char dayStr[6];
@@ -378,7 +374,7 @@ void updateDisplay() {
   display.print(dayStr);
   display.print(F("mi"));
 
-  // Line 8: Nighttime - left label, right-aligned value
+  // Line 7: Nighttime
   display.setCursor(0, 56);
   display.print(F("Nighttime:"));
   char nightStr[6];
